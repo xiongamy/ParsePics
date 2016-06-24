@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Parse
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,7 +16,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
-        // Override point for customization after application launch.
+        
+        //Initialize Parse
+        Parse.initializeWithConfiguration(
+            ParseClientConfiguration(block: { (configuration:ParseMutableClientConfiguration) -> Void in
+                configuration.applicationId = "ParsePic"
+                configuration.clientKey = "jnjbnhinvbcrc"
+                configuration.server = "https://cryptic-temple-53263.herokuapp.com/parse"
+            })
+        )
+        
+        //Check if user is logged in.
+        if PFUser.currentUser() != nil {
+            
+            let storyboard = UIStoryboard(name: Storyboards.main, bundle: nil)
+            
+            self.window!.rootViewController = storyboard.instantiateViewControllerWithIdentifier(ViewControllers.main)
+        }
+        
         return true
     }
 

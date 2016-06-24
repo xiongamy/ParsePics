@@ -1,0 +1,6 @@
+framework module Pods_ParsePics {
+  umbrella header "Pods-ParsePics-umbrella.h"
+
+  export *
+  module * { export * }
+}
