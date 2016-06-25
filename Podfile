@@ -7,6 +7,7 @@ target 'ParsePics' do
 
   pod 'Parse'
   pod 'ParseUI'
+  pod 'M13ProgressSuite'
 
   target 'ParsePicsTests' do
     inherit! :search_paths

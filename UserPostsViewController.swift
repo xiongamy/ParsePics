@@ -11,7 +11,6 @@ import Parse
 
 class UserPostsViewController: FeedViewController {
     
-
     override func setQueryProperties() -> PFQuery {
         let query = PFQuery(className: "Post")
         query.orderByDescending("createdAt")

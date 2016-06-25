@@ -13,10 +13,10 @@ import ParseUI
 class FeedViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UIScrollViewDelegate {
 
     @IBOutlet weak var feedTableView: UITableView!
-    @IBOutlet weak var detailContainerView: UIView!
     
     let queryLimit = 20
     let detailViewAnimationDuration = 0.2
+    let HeaderViewIdentifier = "TableViewHeaderView"
     
     var posts: [PFObject]?
     var isMoreDataLoading = false
@@ -24,16 +24,15 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("main view loaded")
         
         feedTableView.delegate = self
         feedTableView.dataSource = self
         feedTableView.estimatedRowHeight = 400
         feedTableView.rowHeight = UITableViewAutomaticDimension
 
-        let options = NSKeyValueObservingOptions([.New, .Old])
-        detailContainerView.addObserver(self, forKeyPath: "hidden", options: options, context: nil)
-
+        // Register header view nib
+        let nib = UINib(nibName: "FeedSectionHeader", bundle: nil)
+        feedTableView.registerNib(nib, forHeaderFooterViewReuseIdentifier: "FeedSectionHeader")
         
         // Set up infinite scroll loading indicator
         let frame = CGRectMake(0, feedTableView.contentSize.height, feedTableView.bounds.size.width, InfiniteScrollActivityView.defaultHeight)
@@ -52,32 +51,15 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         
         makeQuery(nil)
     }
-    
-    // Triggers when the detailContainerView becomes hidden & not hidden.
-    /*override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        if detailContainerView.hidden == false {
-            print("unhidden")
-            let detailVC = self.storyboard!.instantiateViewControllerWithIdentifier(ViewControllers.detail) as! DetailViewController
-            //detailVC.loadData()
-        }
-    }*/
-    
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(animated)
-        print("main view appeared")
-    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     // Makes query
     // Also the pull-to-refresh function
     // Loads extra data when refreshControl is nil
     func makeQuery(refreshControl: UIRefreshControl?) {
-        
-        print("refreshing")
         
         var atBottom: Bool = false
         
@@ -86,13 +68,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         if refreshControl == nil && posts != nil {
             atBottom = true
             query.skip = posts!.count
-            print("skipping")
-        }
-        
-        if posts != nil {
-            print(posts!.count)
-        } else {
-            print(0)
         }
         
         query.findObjectsInBackgroundWithBlock { (posts: [PFObject]?, error: NSError?) -> Void in
@@ -121,7 +96,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         let query = PFQuery(className: "Post")
         query.orderByDescending("createdAt")
         query.includeKey("author")
-        //query.includeKey("createdAt")
         query.limit = queryLimit
         
         return query
@@ -148,25 +122,54 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         }
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         var numCells = 0
-        
-        if posts != nil {
-            numCells = (self.posts?.count)!
-        }
-        
-        return numCells
+         
+         if posts != nil {
+         numCells = (self.posts?.count)!
+         }
+         
+         return numCells
+    }
+    
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 1
     }
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("PostCell", forIndexPath: indexPath) as! PostCell
+        let cell = tableView.dequeueReusableCellWithIdentifier(Cells.post, forIndexPath: indexPath) as! PostCell
+        cell.selectionStyle = .None
+        
+        let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(onTap(_:)))
+        cell.photoView.userInteractionEnabled = true
+        cell.photoView.addGestureRecognizer(tapRecognizer)
         
         if posts != nil {
-            let post = posts![indexPath.row]
+            let post = posts![indexPath.section]
             cell.post = post
+                        
         }
         
         return cell
+    }
+    
+    func onTap(sender: AnyObject?) {
+        performSegueWithIdentifier("detailSegue", sender: sender)
+    }
+    
+    func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let header = tableView.dequeueReusableHeaderFooterViewWithIdentifier("FeedSectionHeader")! as! FeedSectionHeader
+        
+        if posts != nil {
+            let post = posts![section]
+            header.post = post
+        }
+        
+        return header
+    }
+    
+    func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 30
     }
     
     @IBAction func onLogout(sender: AnyObject) {
@@ -176,106 +179,21 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
             } else {
                 let userVC = self.storyboard!.instantiateViewControllerWithIdentifier(ViewControllers.login)
                 self.presentViewController(userVC, animated: true, completion: nil)
-                
-                
-                print("Logged out!")
             }
         }
     }
-    
-    /*override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        print("preparing for segue")
-        /*let tapRecognizer = sender as! UITapGestureRecognizer
-        let tapLocation = tapRecognizer.locationInView(self.feedTableView)
-        
-        let detailViewController = segue.destinationViewController as! DetailViewController
-        
-        if let tappedIndexPath = self.feedTableView.indexPathForRowAtPoint(tapLocation) {
-            if let tappedCell = self.feedTableView.cellForRowAtIndexPath(tappedIndexPath) {
-                let indexPath = self.feedTableView.indexPathForCell(tappedCell)
-                /*if posts != nil {
-                 let tryPosts = posts
-                 let post = tryPosts![indexPath!.row]
-                 
-                 detailVC.post = post
-                 }*/
-                
-                //detailVC.rowNumber = indexPath!.row
-                
-                if self.posts != nil {
-                    detailViewController.post = self.posts![indexPath!.row]
-                }
-            }
-        }*/
-        
-        
-    }*/
-    
 
-    @IBAction func tapPhoto(sender: AnyObject) {
-        let detailVC = self.storyboard!.instantiateViewControllerWithIdentifier(ViewControllers.detail) as! DetailViewController
-        
-        self.addChildViewController(detailVC)
-        
-        print("tapped")
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        let detailVC = segue.destinationViewController as! DetailViewController
         
         let tapRecognizer = sender as! UITapGestureRecognizer
         let tapLocation = tapRecognizer.locationInView(self.feedTableView)
         
-        /*UIView.animateWithDuration(detailViewAnimationDuration, animations: {
-            self.detailContainerView.alpha = 1.0
-            self.detailContainerView.hidden = false
-            }, completion: { (success) in*/
-        
         if let tappedIndexPath = self.feedTableView.indexPathForRowAtPoint(tapLocation) {
-            if let tappedCell = self.feedTableView.cellForRowAtIndexPath(tappedIndexPath) {
-                let indexPath = self.feedTableView.indexPathForCell(tappedCell)
-                /*if posts != nil {
-                    let tryPosts = posts
-                    let post = tryPosts![indexPath!.row]
-                 
-                    detailVC.post = post
-                }*/
-                
-                //detailVC.rowNumber = indexPath!.row
-                
-                //detailVC.captionLabel.text = "Hiiiii"
-                
-                print(indexPath!.row)
-                
-                if self.posts != nil {
-                    let post = self.posts![indexPath!.row]
-                    detailVC.post = post
-                }
-                
-                //detailVC.loadData()
-                
-                print("data sent!")
+            if self.posts != nil {
+                let post = self.posts![tappedIndexPath.section]
+                detailVC.post = post
             }
-                }/*})*/
-        detailVC.view.frame = detailContainerView.frame
-        
-        UIView.transitionWithView(self.view, duration: 0.5, options: UIViewAnimationOptions.TransitionCrossDissolve, animations: {self.view.addSubview(detailVC.view)}, completion: nil)
-        
-        
-        detailVC.didMoveToParentViewController(self)
-       
-        
-        //fadeInDetailView()
-    }
-    
-    func fadeInDetailView() {
-        UIView.animateWithDuration(detailViewAnimationDuration, animations: {
-            self.detailContainerView.alpha = 1.0
-            self.detailContainerView.hidden = false
-        })
-    }
-    
-    func fadeOutDetailView() {
-        UIView.animateWithDuration(detailViewAnimationDuration, animations: {
-            self.detailContainerView.alpha = 0.0
-            }, completion: { (success) in
-                self.detailContainerView.hidden = true
-        })
+        }
     }
 }

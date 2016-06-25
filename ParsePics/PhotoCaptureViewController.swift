@@ -7,30 +7,32 @@
 //
 
 import UIKit
+import M13ProgressSuite
 
 class PhotoCaptureViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     @IBOutlet weak var cancelButton: UIButton!
+    
     @IBOutlet weak var photoView: UIImageView!
     @IBOutlet weak var cameraLabel: UILabel!
     @IBOutlet weak var libraryLabel: UILabel!
     @IBOutlet weak var divider: UIView!
+    
     @IBOutlet weak var captionField: UITextField!
     @IBOutlet weak var captionView: UIView!
-    //@IBOutlet weak var captionTopConstraint: NSLayoutConstraint!
-    @IBOutlet weak var captionBottomConstraint: NSLayoutConstraint!
+    
     @IBOutlet weak var shadingView: UIView!
     
-    let minScrollFraction: CGFloat = 0.2
-    let maxScrollFraction: CGFloat = 0.8
+    @IBOutlet weak var captionBottomConstraint: NSLayoutConstraint!
+    
+    // keyboard animation
     var keyboardHeight: CGFloat = 0.0
     var animationDuration: NSTimeInterval = 0.0
-    
     var origBottomDistance: CGFloat = 0.0
     
+    // view alpha values
     let cancelButtonAlpha: CGFloat = 0.75
     let shadingViewAlpha: CGFloat = 0.5
-
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -50,13 +52,13 @@ class PhotoCaptureViewController: UIViewController, UIImagePickerControllerDeleg
         
         origBottomDistance = captionBottomConstraint.constant
         
+        // Add keyboard show/hide notifications
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.keyboardWillShow(_:)), name: UIKeyboardWillShowNotification, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.keyboardWillHide(_:)), name: UIKeyboardWillHideNotification, object: nil)
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     @IBAction func tapView(sender: AnyObject) {
@@ -67,7 +69,7 @@ class PhotoCaptureViewController: UIViewController, UIImagePickerControllerDeleg
         let vc = UIImagePickerController()
         vc.delegate = self
         vc.allowsEditing = true
-        vc.sourceType = UIImagePickerControllerSourceType.SavedPhotosAlbum//Camera
+        vc.sourceType = UIImagePickerControllerSourceType.Camera
         
         self.presentViewController(vc, animated: true, completion: nil)
     }
@@ -85,9 +87,10 @@ class PhotoCaptureViewController: UIViewController, UIImagePickerControllerDeleg
     func imagePickerController(picker: UIImagePickerController,
                                didFinishPickingMediaWithInfo info: [String : AnyObject]) {
         // Get the image captured by the UIImagePickerController
-        let originalImage = info[UIImagePickerControllerOriginalImage] as! UIImage
         let editedImage = info[UIImagePickerControllerEditedImage] as! UIImage
         
+        
+        // Display image and hide labels
         photoView.image = editedImage
         cameraLabel.alpha = 0
         libraryLabel.alpha = 0
@@ -102,6 +105,8 @@ class PhotoCaptureViewController: UIViewController, UIImagePickerControllerDeleg
     @IBAction func cancelPhoto(sender: AnyObject) {
         self.captionField.text = ""
         
+        
+        // Remove image and show labels
         UIView.animateWithDuration(0.2, animations: { () -> Void in
             self.cameraLabel.alpha = 1.0
             self.libraryLabel.alpha = 1.0
@@ -114,6 +119,8 @@ class PhotoCaptureViewController: UIViewController, UIImagePickerControllerDeleg
         })
     }
     
+    // Called when the keyboard will be shown.
+    // Moves views to prepare: moves caption view above keyboard, for example
     func keyboardWillShow(notification: NSNotification) {
         let userInfo: NSDictionary = notification.userInfo!
         let keyboardRectangle = (userInfo.valueForKey(UIKeyboardFrameBeginUserInfoKey) as! NSValue).CGRectValue()
@@ -143,6 +150,8 @@ class PhotoCaptureViewController: UIViewController, UIImagePickerControllerDeleg
         }
     }
     
+    // Called when keyboard will be hidden.
+    // Moves views back to original positions
     func keyboardWillHide(sender: AnyObject) {
         view.layoutIfNeeded()
         UIView.animateWithDuration(animationDuration, animations: {
@@ -155,35 +164,52 @@ class PhotoCaptureViewController: UIViewController, UIImagePickerControllerDeleg
     }
     
     @IBAction func uploadPhoto(sender: AnyObject) {
-        print("uploading...")
         let image = photoView.image
         let caption = captionField.text
+        
+        let pHUD = showHUD()
         
         if image != nil {
             Post.postUserImage(image, withCaption: caption) { (success: Bool, error: NSError?) in
                 if success {
                     //Dismiss the view controller
-                    print("Uploaded!")
-                    
+                    pHUD.hide(true)
                     self.dismissViewControllerAnimated(true, completion: nil)
-                } else {
+                } else { //error
                     let alertController = UIAlertController(title: "Error", message: "There was an error while uploading your photo. Please try again.", preferredStyle: .Alert)
                     let okayAction = UIAlertAction(title: "Okay", style: .Default, handler: { (action: UIAlertAction) in
                     })
                     
                     alertController.addAction(okayAction)
+                    pHUD.hide(true)
                     self.presentViewController(alertController, animated: true, completion: nil)
                 }
-            
             }
-        } else {
+        } else { // error
             let alertController = UIAlertController(title: "No Image", message: "Please tap to take a photo or to upload an image from your photo library.", preferredStyle: .Alert)
             let okayAction = UIAlertAction(title: "Okay", style: .Default, handler: { (action: UIAlertAction) in
             })
             
             alertController.addAction(okayAction)
+            pHUD.hide(true)
             self.presentViewController(alertController, animated: true, completion: nil)
         }
+    }
+    
+    func showHUD() -> M13ProgressHUD {
+        let progressView = M13ProgressViewRing.init()
+        progressView.indeterminate = true
+        self.view.addSubview(progressView)
+        let HUD = M13ProgressHUD(progressView: progressView)
+        HUD.progressViewSize = CGSizeMake(80.0, 80.0)
+        HUD.animationPoint = CGPointMake(UIScreen.mainScreen().bounds.size.width / 2, UIScreen.mainScreen().bounds.size.height / 2)
+        
+        HUD.hudBackgroundColor = UIColor.blackColor()
+        let window: UIWindow! = (UIApplication.sharedApplication().delegate as! AppDelegate).window
+        window.addSubview(HUD)
+        HUD.show(true)
+        
+        return HUD
     }
     
     @IBAction func pushCancel(sender: AnyObject) {

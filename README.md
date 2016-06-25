@@ -2,7 +2,7 @@
 
 ParsePics is a photo sharing app using Parse as its backend.
 
-Time spent: **X** hours spent in total
+Time spent: 25 hours spent in total
 
 ## User Stories
 
@@ -20,15 +20,15 @@ The following **required** functionality is completed:
 
 The following **optional** features are implemented:
 
-- [ ] Show the username and creation time for each post
-- [ ] After the user submits a new post, show a progress HUD while the post is being uploaded to Parse.
+- [X] Show the username and creation time for each post
+- [X] After the user submits a new post, show a progress HUD while the post is being uploaded to Parse.
 - [ ] User Profiles:
    - [ ] Allow the logged in user to add a profile photo
    - [ ] Display the profile photo with each post
    - [ ] Tapping on a post's username or profile photo goes to that user's profile page
 - [ ] User can comment on a post and see all comments for each post in the post details screen.
 - [ ] User can like a post and see number of likes for each post in the post details screen.
-- [ ] Run your app on your phone and use the camera to take the photo
+- [X] Run your app on your phone and use the camera to take the photo
 
 
 The following **additional** features are implemented:
@@ -49,7 +49,7 @@ Please list two areas of the assignment you'd like to **discuss further with you
 
 Here's a walkthrough of implemented user stories:
 
-<img src='https://i.imgur.com/kA46rP8.gif' title='Video Walkthrough' width='' alt='Video Walkthrough' /><img src = 'http://i.imgur.com/h8mkbV1.gif' width ='' /><img src = 'http://i.imgur.com/g3ZFA35.gif' width = '' />
+<img src='http://i.imgur.com/ftS7qli.gif' title='Video Walkthrough' width='' alt='Video Walkthrough' /><img src = 'http://i.imgur.com/bycszZH.gif' width ='' /><img src = 'http://i.imgur.com/VriQ8dD.gif' width = '' />
 
 GIF created with [LiceCap](http://www.cockos.com/licecap/).
 
@@ -64,7 +64,7 @@ List an 3rd party libraries, icons, graphics, or other assets you used in your a
 
 ## Notes
 
-I spent a lot of time trying to get the feed view to pass data to the detail view, because the detail view's properties and subviews were inaccessible/nonexistent at the time I was passing data to them. Adjusting layouts and working with AutoLayout wasn't difficult, but was often time-consuming and frustrating.
+I spent a lot of time trying to get the feed view to pass data to the detail view, because the detail view's properties and subviews were inaccessible/nonexistent at the time I was passing data to them. Adjusting layouts and working with AutoLayout wasn't difficult, but was often time-consuming and frustrating. It was difficult to properly associate each cell's image view with a tap gesture recognizer.
 
 ## License
 

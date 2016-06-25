@@ -25,3 +25,8 @@ struct Segues {
     static let login = "loginSegue"
     static let detail = "detailSegue"
 }
+
+struct Cells {
+    static let post = "PostCell"
+    static let header = "HeaderCell"
+}
